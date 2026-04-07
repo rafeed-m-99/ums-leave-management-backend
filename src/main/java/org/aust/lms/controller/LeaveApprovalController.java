@@ -1,9 +1,7 @@
 package org.aust.lms.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.aust.lms.dto.LeaveApprovalListResponse;
-import org.aust.lms.dto.LeaveApprovalRequest;
-import org.aust.lms.dto.LeaveApprovalResponse;
+import org.aust.lms.dto.*;
 import org.aust.lms.service.LeaveApprovalQueryService;
 import org.aust.lms.service.LeaveApprovalService;
 import org.springframework.data.domain.Page;
@@ -24,13 +22,15 @@ public class LeaveApprovalController {
     }
 
     @GetMapping("/pending/{roleId}")
-    public ResponseEntity<Page<LeaveApprovalListResponse>> getPendingApplications(
+    public ResponseEntity<LeaveApprovalPageResponse> getPendingApplications(
             @PathVariable String roleId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String applicationStage,
             @RequestParam(required = false) String leaveType,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir
     ) {
         return ResponseEntity.ok(
                 leaveApprovalQueryService.getPendingApplications(
@@ -39,8 +39,19 @@ public class LeaveApprovalController {
                         applicationStage,
                         leaveType,
                         page,
-                        size
+                        size,
+                        sortBy,
+                        sortDir
                 )
+        );
+    }
+
+    @GetMapping("/application/{applicationId}")
+    public ResponseEntity<LeaveApplicationDetailsResponse> getDetails(
+            @PathVariable Long applicationId
+    ) {
+        return ResponseEntity.ok(
+                leaveApprovalService.getApplicationDetails(applicationId)
         );
     }
 

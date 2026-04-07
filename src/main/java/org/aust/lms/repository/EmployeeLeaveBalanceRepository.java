@@ -33,4 +33,18 @@ public interface EmployeeLeaveBalanceRepository extends CrudRepository<EmployeeL
     WHERE lb.employee.employeeId = :employeeId
 """)
     List<LeaveBalanceResponse> findByEmployeeId(@Param("employeeId") String employeeId);
+
+    @Query("""
+    SELECT
+        lb.daysLeft
+    FROM EmployeeLeaveBalance lb
+    JOIN lb.leaveType lt
+    JOIN LeavePolicy lp ON lp.leaveType = lt
+    WHERE lb.employee.employeeId = :employeeId
+    AND lt = :leaveType
+""")
+     Integer findByEmployeeIdAndLeaveType(
+            @Param("employeeId") String employeeId,
+            @Param("leaveType") LeaveType leaveType
+    );
 }

@@ -1,7 +1,9 @@
 package org.aust.lms.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.aust.lms.dto.LeaveApprovalListResponse;
+import org.aust.lms.dto.LeaveApprovalPageResponse;
 import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.repository.LeaveApplicationHistoryRepository;
@@ -20,33 +22,59 @@ public class LeaveApprovalQueryService {
         this.historyRepository = historyRepository;
     }
 
-    public Page<LeaveApprovalListResponse> getPendingApplications(
+    @Transactional
+    public LeaveApprovalPageResponse getPendingApplications(
             String roleId,
             String status,
             String applicationStage,
             String leaveType,
             int page,
-            int size
+            int size,
+            String sortBy,
+            String sortDir
     ) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdOn").descending());
+        LeaveActionStatus statusEnum =
+                (status == null || status.isBlank()) ? null : LeaveActionStatus.valueOf(status);
 
-        LeaveActionStatus statusEnum = null;
-        if (status != null && !status.isBlank()) {
-            statusEnum = LeaveActionStatus.valueOf(status);
-        }
+        LeaveApplicationStage stageEnum =
+                (applicationStage == null || applicationStage.isBlank()) ? null : LeaveApplicationStage.valueOf(applicationStage);
 
-        LeaveApplicationStage stageEnum = null;
-        if (applicationStage != null && !applicationStage.isBlank()) {
-            stageEnum = LeaveApplicationStage.valueOf(applicationStage);
-        }
+        String sortField = mapSortField(sortBy);
 
-        return historyRepository.findPendingByFilters(
-                roleId,
-                statusEnum,
-                stageEnum,
-                leaveType,
-                pageable
-        );
+        Sort sort = (sortDir != null && sortDir.equalsIgnoreCase("desc"))
+                ? Sort.by(sortField).descending()
+                : Sort.by(sortField).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<LeaveApprovalListResponse> result =
+                historyRepository.findPendingByFilters(
+                        roleId,
+                        statusEnum,
+                        stageEnum,
+                        leaveType,
+                        pageable
+                );
+
+        // ✅ For now hardcoded
+        boolean isVC = checkVC(roleId);
+
+        return new LeaveApprovalPageResponse(result, isVC);
+    }
+
+    private boolean checkVC(String roleId) {
+        return false;
+    }
+
+    private String mapSortField(String sortBy) {
+        if (sortBy == null) return "a.appliedOn";
+
+        return switch (sortBy) {
+            case "appliedOn" -> "a.appliedOn";
+            case "from" -> "h.fromDate";
+            case "to" -> "h.toDate";
+            default -> "a.appliedOn";
+        };
     }
 }

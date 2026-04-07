@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveApplicationHistory, Long> {
 
@@ -54,4 +55,16 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
             @Param("leaveType") String leaveType,
             Pageable pageable
     );
+
+    @Query("""
+        SELECT h
+        FROM LeaveApplicationHistory h
+        WHERE h.application.id = :applicationId
+        AND h.createdOn = (
+          SELECT MAX(h2.createdOn)
+          FROM LeaveApplicationHistory h2
+          WHERE h2.application.id = :applicationId
+        )
+    """)
+    Optional<LeaveApplicationHistory> findLatestHistory(@Param("applicationId") Long applicationId);
 }
