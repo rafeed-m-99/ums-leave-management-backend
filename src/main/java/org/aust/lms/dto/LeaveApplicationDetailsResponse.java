@@ -16,6 +16,7 @@ public record LeaveApplicationDetailsResponse(
         Integer totalDays,
         Instant appliedOn,
         String reason,
+        String actionRole,
         List<AttachmentDto> attachments,
         List<StatusHistoryDto> history
 ) {}

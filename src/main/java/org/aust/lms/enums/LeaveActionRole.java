@@ -1,17 +1,16 @@
 package org.aust.lms.enums;
 
-import lombok.*;
-
-public enum LeaveApprovalRole {
+public enum LeaveActionRole {
     APPLICANT(1, "Applicant"),
     HEAD(2, "Head/Director"),
     VC(3, "VC"),
-    REGISTRAR(4, "Registrar");
+    REGISTRAR(4, "Registrar"),
+    SYSTEM(5, "System"),;
 
     final int value;
     final String description;
 
-    LeaveApprovalRole(int value, String description) {
+    LeaveActionRole(int value, String description) {
         this.value = value;
         this.description = description;
     }

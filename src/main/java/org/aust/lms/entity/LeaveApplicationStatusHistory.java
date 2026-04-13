@@ -3,7 +3,7 @@ package org.aust.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.aust.lms.enums.LeaveActionStatus;
-import org.aust.lms.enums.LeaveApprovalRole;
+import org.aust.lms.enums.LeaveActionRole;
 
 import java.time.*;
 
@@ -23,7 +23,7 @@ public class LeaveApplicationStatusHistory {
     private Instant actionTakenOn;
 
     @Enumerated(EnumType.STRING)
-    private LeaveApprovalRole actionTakenBy;
+    private LeaveActionRole actionTakenBy;
 
     @Column(length = 200)
     private String comment;
@@ -43,7 +43,7 @@ public class LeaveApplicationStatusHistory {
         return actionTakenOn;
     }
 
-    public LeaveApprovalRole getActionTakenBy() {
+    public LeaveActionRole getActionTakenBy() {
         return actionTakenBy;
     }
 
@@ -67,7 +67,7 @@ public class LeaveApplicationStatusHistory {
         this.actionTakenOn = actionTakenOn;
     }
 
-    public void setActionTakenBy(LeaveApprovalRole actionTakenBy) {
+    public void setActionTakenBy(LeaveActionRole actionTakenBy) {
         this.actionTakenBy = actionTakenBy;
     }
 

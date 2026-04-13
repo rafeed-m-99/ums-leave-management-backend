@@ -2,7 +2,7 @@ package org.aust.lms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.aust.lms.enums.LeaveApprovalRole;
+import org.aust.lms.enums.LeaveActionRole;
 
 @Entity
 @Table(name = "leave_approval_flow")
@@ -20,7 +20,7 @@ public class LeaveApprovalFlow {
     private Integer stepNumber;
 
     @Enumerated(EnumType.STRING)
-    private LeaveApprovalRole approvalRole;
+    private LeaveActionRole approvalRole;
 
     private Boolean isFinalStep;
 
@@ -40,7 +40,7 @@ public class LeaveApprovalFlow {
         return stepNumber;
     }
 
-    public LeaveApprovalRole getApprovalRole() {
+    public LeaveActionRole getApprovalRole() {
         return approvalRole;
     }
 
@@ -64,7 +64,7 @@ public class LeaveApprovalFlow {
         this.stepNumber = stepNumber;
     }
 
-    public void setApprovalRole(LeaveApprovalRole approvalRole) {
+    public void setApprovalRole(LeaveActionRole approvalRole) {
         this.approvalRole = approvalRole;
     }
 

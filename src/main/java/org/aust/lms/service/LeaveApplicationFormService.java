@@ -1,12 +1,11 @@
 package org.aust.lms.service;
 
-import lombok.RequiredArgsConstructor;
 import org.aust.lms.dto.LeaveApplicationFormRequest;
 import org.aust.lms.dto.LeaveApplicationResponse;
 import org.aust.lms.entity.*;
 import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveApplicationStage;
-import org.aust.lms.enums.LeaveApprovalRole;
+import org.aust.lms.enums.LeaveActionRole;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +15,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class LeaveApplicationFormService {
@@ -143,7 +141,7 @@ public class LeaveApplicationFormService {
         LeaveApplicationStatusHistory status = new LeaveApplicationStatusHistory();
         status.setApplicationHistory(history);
         status.setActionTakenOn(Instant.now());
-        status.setActionTakenBy(LeaveApprovalRole.APPLICANT);
+        status.setActionTakenBy(LeaveActionRole.APPLICANT);
         status.setComment(null);
         status.setActionStatus(LeaveActionStatus.WAITING);
 

@@ -4,5 +4,5 @@ import org.springframework.data.domain.Page;
 
 public record LeaveApprovalPageResponse (
         Page<LeaveApprovalListResponse> page,
-        boolean isVC
+        String actionRole
 ) { }

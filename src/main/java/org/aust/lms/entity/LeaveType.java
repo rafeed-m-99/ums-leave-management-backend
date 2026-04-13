@@ -17,8 +17,6 @@ public class LeaveType {
 
     private String name;
 
-
-
     private Boolean isEnabled;
 
     private Instant lastModified;

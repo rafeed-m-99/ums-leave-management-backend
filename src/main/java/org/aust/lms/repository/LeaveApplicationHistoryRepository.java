@@ -67,4 +67,23 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
         )
     """)
     Optional<LeaveApplicationHistory> findLatestHistory(@Param("applicationId") Long applicationId);
+
+    // 2️⃣ Latest history for given leave application IDs
+    @Query("""
+        SELECT lah FROM LeaveApplicationHistory lah
+        WHERE lah.application.id IN :applicationIds
+          AND lah.createdOn = (
+              SELECT MAX(lah2.createdOn)
+              FROM LeaveApplicationHistory lah2
+              WHERE lah2.application.id = lah.application.id
+          )
+    """)
+    List<LeaveApplicationHistory> findLatestHistories(@Param("applicationIds") List<Long> applicationIds);
+
+    @Query("""
+        SELECT lah FROM LeaveApplicationHistory lah
+        WHERE lah.application.id = :applicationId
+        ORDER BY lah.createdOn ASC
+    """)
+    List<LeaveApplicationHistory> findByApplicationIdOrderByCreatedOn(Long applicationId);
 }

@@ -4,9 +4,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.aust.lms.dto.LeaveApprovalListResponse;
 import org.aust.lms.dto.LeaveApprovalPageResponse;
+import org.aust.lms.enums.LeaveActionRole;
 import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.repository.LeaveApplicationHistoryRepository;
+import org.aust.lms.repository.LeaveApprovalFlowConditionalRepository;
+import org.aust.lms.repository.LeaveApprovalFlowRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +23,7 @@ public class LeaveApprovalQueryService {
 
     public LeaveApprovalQueryService(LeaveApplicationHistoryRepository historyRepository) {
         this.historyRepository = historyRepository;
+
     }
 
     @Transactional
@@ -57,10 +61,9 @@ public class LeaveApprovalQueryService {
                         pageable
                 );
 
-        // ✅ For now hardcoded
-        boolean isVC = checkVC(roleId);
+        String actionRole = getActionRoleFromRoleId(roleId);
 
-        return new LeaveApprovalPageResponse(result, isVC);
+        return new LeaveApprovalPageResponse(result, actionRole);
     }
 
     private boolean checkVC(String roleId) {
@@ -76,5 +79,14 @@ public class LeaveApprovalQueryService {
             case "to" -> "h.toDate";
             default -> "a.appliedOn";
         };
+    }
+
+    private String getActionRoleFromRoleId(String roleId) {
+        if (roleId == null) return null;
+        switch (roleId) {
+            case "7001": return LeaveActionRole.VC.name();
+            case "1001": return LeaveActionRole.HEAD.name();
+            default: return null;
+        }
     }
 }
