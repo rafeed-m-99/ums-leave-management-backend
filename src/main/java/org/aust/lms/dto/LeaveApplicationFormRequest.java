@@ -8,11 +8,6 @@ public record LeaveApplicationFormRequest(
         String to,
         Boolean exBdLeave,
         Integer applicationStep,
-        String reason
-) {
-
-    public record Attachment(
-            String fileName,
-            String description
-    ) {}
-}
+        String reason,
+        List<LeaveAttachmentRequest> attachments
+) { }

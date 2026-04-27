@@ -5,6 +5,8 @@ import lombok.*;
 import org.aust.lms.enums.LeaveApplicationStage;
 
 import java.time.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "leave_application_history")
@@ -41,6 +43,9 @@ public class LeaveApplicationHistory {
     private String nextApprovalRoleId;
 
     private Instant createdOn;
+
+    @OneToMany(mappedBy = "applicationHistory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LeaveApplicationStatusHistory> statusHistory = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -90,6 +95,10 @@ public class LeaveApplicationHistory {
         return createdOn;
     }
 
+    public List<LeaveApplicationStatusHistory> getStatusHistory() {
+        return statusHistory;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -136,5 +145,10 @@ public class LeaveApplicationHistory {
 
     public void setCreatedOn(Instant createdOn) {
         this.createdOn = createdOn;
+    }
+
+    public void addStatus(LeaveApplicationStatusHistory s) {
+        statusHistory.add(s);
+        s.setApplicationHistory(this);
     }
 }

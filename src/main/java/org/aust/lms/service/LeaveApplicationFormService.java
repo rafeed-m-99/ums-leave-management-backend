@@ -1,15 +1,23 @@
 package org.aust.lms.service;
 
+import org.aust.lms.dto.LeaveAttachmentRequest;
 import org.aust.lms.dto.LeaveApplicationFormRequest;
 import org.aust.lms.dto.LeaveApplicationResponse;
 import org.aust.lms.entity.*;
 import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.enums.LeaveActionRole;
+import org.aust.lms.exception.BadRequestException;
+import org.aust.lms.exception.NotFoundException;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -24,130 +32,164 @@ public class LeaveApplicationFormService {
     private final LeavePolicyRepository leavePolicyRepository;
 
     private final LeaveApplicationRepository leaveApplicationRepository;
-    private final LeaveApplicationHistoryRepository leaveApplicationHistoryRepository;
-    private final LeaveApplicationStatusHistoryRepository statusHistoryRepository;
     private final EmployeeLeaveBalanceRepository employeeLeaveBalanceRepository;
     private final EmployeeDesignationRepository employeeDesignationRepository;
+    private final LeaveAttachmentRepository leaveAttachmentRepository;
 
-    public LeaveApplicationFormService(EmployeeRepository employeeRepository, LeaveTypeRepository leaveTypeRepository, LeavePolicyRepository leavePolicyRepository, LeaveApplicationRepository leaveApplicationRepository, LeaveApplicationHistoryRepository leaveApplicationHistoryRepository, LeaveApplicationStatusHistoryRepository statusHistoryRepository, EmployeeLeaveBalanceRepository employeeLeaveBalanceRepository, EmployeeDesignationRepository employeeDesignationRepository) {
+    private final FileStorageService fileStorageService;
+
+    public LeaveApplicationFormService(EmployeeRepository employeeRepository, LeaveTypeRepository leaveTypeRepository, LeavePolicyRepository leavePolicyRepository, LeaveApplicationRepository leaveApplicationRepository, EmployeeLeaveBalanceRepository employeeLeaveBalanceRepository, EmployeeDesignationRepository employeeDesignationRepository, LeaveAttachmentRepository leaveAttachmentRepository, FileStorageService fileStorageService) {
         this.employeeRepository = employeeRepository;
         this.leaveTypeRepository = leaveTypeRepository;
         this.leavePolicyRepository = leavePolicyRepository;
         this.leaveApplicationRepository = leaveApplicationRepository;
-        this.leaveApplicationHistoryRepository = leaveApplicationHistoryRepository;
-        this.statusHistoryRepository = statusHistoryRepository;
         this.employeeLeaveBalanceRepository = employeeLeaveBalanceRepository;
         this.employeeDesignationRepository = employeeDesignationRepository;
+        this.leaveAttachmentRepository = leaveAttachmentRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Transactional
-    public LeaveApplicationResponse applyForLeave(String employeeId, Long designationId, String departmentId, LeaveApplicationFormRequest request) {
-        List<String> messages = new ArrayList<>();
+    public LeaveApplicationResponse applyForLeave(
+            String employeeId,
+            Long designationId,
+            String departmentId,
+            LeaveApplicationFormRequest request,
+            String sessionId
+    ) {
 
-        // STEP 0: Fetch required data
-        Employee employee = employeeRepository.findById(employeeId).orElse(null);
-        LeaveType leaveType = leaveTypeRepository.findById(request.leaveTypeId()).orElse(null);
-        EmployeeDesignation employeeDesignation = employeeDesignationRepository.findById(designationId).orElse(null);
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new NotFoundException("Employee not found"));
 
-        if (employee == null) {
-            messages.add("Employee not found");
-            return new LeaveApplicationResponse(false, messages);
-        }
+        LeaveType leaveType = leaveTypeRepository.findById(request.leaveTypeId())
+                .orElseThrow(() -> new BadRequestException("Invalid leave type"));
 
-        if (leaveType == null) {
-            messages.add("Invalid leave type");
-            return new LeaveApplicationResponse(false, messages);
-        }
+        EmployeeDesignation designation = employeeDesignationRepository.findById(designationId)
+                .orElseThrow(() -> new BadRequestException("Invalid designation"));
 
-        if (employeeDesignation == null) {
-            messages.add("Invalid employee designation");
-            return new LeaveApplicationResponse(false, messages);
-        }
+        LeavePolicy policy = leavePolicyRepository.findByLeaveType(leaveType)
+                .orElseThrow(() -> new BadRequestException("No policy defined"));
 
-        LeavePolicy policy = leavePolicyRepository.findByLeaveType(leaveType).orElse(null);
+        EmployeeLeaveBalance balance = employeeLeaveBalanceRepository
+                .findByEmployeeAndLeaveType(employee, leaveType)
+                .orElseThrow(() -> new BadRequestException("Not eligible"));
 
-        if (policy == null) {
-            messages.add("No policy defined for this leave type.");
-            return new LeaveApplicationResponse(false, messages);
-        }
-
-        EmployeeLeaveBalance employeeLeaveBalance = employeeLeaveBalanceRepository.findByEmployeeAndLeaveType(employee, leaveType).orElse(null);
-
-        if (employeeLeaveBalance == null) {
-            messages.add("Employee is not eligible for this leave type.");
-            return new LeaveApplicationResponse(false, messages);
-        }
-
-        // STEP 1: POLICY and LEAVE BALANCE VALIDATION
-        validatePolicy(employee, policy, request, messages);
-
-        validateBalance(employee, employeeLeaveBalance, request, messages);
-
-        if (!messages.isEmpty()) {
-            return new LeaveApplicationResponse(false, messages);
-        }
-
-        // =========================
-        // 3. GET NEXT APPROVER ROLE
-        // =========================
-        String nextApprover = getNextApprover(
-                leaveType,
-                employeeDesignation,
-                departmentId,
-                request.applicationStep(),
-                request.exBdLeave()
-        );
-
-        // =========================
-        // 4. SAVE APPLICATION
-        // =========================
-
-        LeaveApplication application = new LeaveApplication();
-        application.setEmployee(employee);
-        application.setLeaveType(leaveType);
-        application.setAppliedOn(Instant.now());
-        application.setCreatedOn(Instant.now());
-
-        application = leaveApplicationRepository.save(application);
-
-        // =========================
-        // 5. SAVE APPLICATION HISTORY
-        // =========================
+        validatePolicy(employee, policy, request);
+        validateBalance(employee, balance, request);
 
         LocalDate fromDate = LocalDate.parse(request.from());
         LocalDate toDate = LocalDate.parse(request.to());
 
         int totalDays = (int) ChronoUnit.DAYS.between(fromDate, toDate) + 1;
 
+        String nextApprover = getNextApprover(
+                leaveType, designation, departmentId,
+                request.applicationStep(), request.exBdLeave()
+        );
+
+        Instant now = Instant.now();
+
+        LeaveApplication application = new LeaveApplication();
+        application.setEmployee(employee);
+        application.setLeaveType(leaveType);
+        application.setAppliedOn(now);
+        application.setCreatedOn(now);
+
         LeaveApplicationHistory history = new LeaveApplicationHistory();
-        history.setApplication(application);
         history.setApplicationStage(LeaveApplicationStage.INITIAL);
         history.setFronDate(fromDate);
         history.setToDate(toDate);
         history.setTotalDays(totalDays);
         history.setReason(request.reason());
         history.setExBangladeshLeave(request.exBdLeave());
-        history.setSandwichLeave(false); // need advanced checking for sandwich casual leave
+        history.setSandwichLeave(false);
         history.setApplicationStep(1);
         history.setNextApprovalRoleId(nextApprover);
-        history.setCreatedOn(Instant.now());
-
-        history = leaveApplicationHistoryRepository.save(history);
-
-        // =========================
-        // 6. SAVE STATUS HISTORY
-        // =========================
+        history.setCreatedOn(now);
 
         LeaveApplicationStatusHistory status = new LeaveApplicationStatusHistory();
-        status.setApplicationHistory(history);
-        status.setActionTakenOn(Instant.now());
+        status.setActionTakenOn(now);
         status.setActionTakenBy(LeaveActionRole.APPLICANT);
-        status.setComment(null);
         status.setActionStatus(LeaveActionStatus.WAITING);
 
-        statusHistoryRepository.save(status);
+        history.addStatus(status);
+        application.addHistory(history);
 
-        return new LeaveApplicationResponse(true, List.of("Leave applied successfully"));
+        leaveApplicationRepository.save(application);
+
+        // =========================
+        // HANDLE FILES
+        // =========================
+        if (request.attachments() != null) {
+
+            Path leaveFolder = Paths.get("uploads/leave")
+                    .resolve(String.valueOf(application.getId()));
+
+            try {
+                Files.createDirectories(leaveFolder);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (LeaveAttachmentRequest a : request.attachments()) {
+                Path tempFile = Paths.get("uploads/temp")
+                        .resolve(sessionId)
+                        .resolve(a.storedFileName());
+
+                Path finalFile = leaveFolder.resolve(a.storedFileName());
+
+                try {
+                    Files.move(tempFile, finalFile, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                LeaveAttachment att = new LeaveAttachment();
+
+                att.setOriginalFileName(a.originalFileName());
+                att.setStoredFileName(a.storedFileName());
+                att.setFileType(a.fileType());
+                att.setFileSize(a.fileSize());
+
+                try {
+                    att.setFileSize(Files.size(finalFile));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                att.setDescription(a.description());
+                att.setUploadedAt(Instant.now());
+                att.setLeaveApplication(application);
+
+                application.getAttachments().add(att);
+            }
+
+            fileStorageService.deleteTemp(sessionId);
+        }
+
+        return new LeaveApplicationResponse(
+                application.getId(),
+                true,
+                List.of("Leave applied successfully")
+        );
+    }
+
+    @Transactional
+    public void deleteAttachment(Long attachmentId, String userId) {
+
+        LeaveAttachment att = leaveAttachmentRepository.findById(attachmentId)
+                .orElseThrow();
+
+        LeaveApplication leave = att.getLeaveApplication();
+
+        // 🔒 SECURITY: ensure user owns this leave
+        if (!leave.getEmployee().getEmployeeId().equals(userId)) {
+            throw new SecurityException("Unauthorized");
+        }
+
+        fileStorageService.delete(att.getStoredFileName(), leave.getId());
+
+        leaveAttachmentRepository.delete(att);
     }
 
     // =========================================================
@@ -155,8 +197,7 @@ public class LeaveApplicationFormService {
     // =========================================================
     private void validatePolicy(Employee employee,
                                 LeavePolicy policy,
-                                LeaveApplicationFormRequest request,
-                                List<String> messages) {
+                                LeaveApplicationFormRequest request) {
 
 //        LocalDate from = LocalDate.parse(request.from());
 //        LocalDate to = LocalDate.parse(request.to());
@@ -192,13 +233,26 @@ public class LeaveApplicationFormService {
 //            }
 //        }
 //
-//        // 👉 Add more rules here as needed
+//        New ones are here:
+//        LocalDate from = LocalDate.parse(request.from());
+//        LocalDate to = LocalDate.parse(request.to());
+//
+//        int days = (int) ChronoUnit.DAYS.between(from, to) + 1;
+//
+//        if (from.isAfter(to)) {
+//            messages.add("From date cannot be after To date.");
+//        }
+//
+//        // TODO: Verify employee type
+//
+//        // TODO: Verify gender
+//
+
     }
 
     private void validateBalance(Employee employee,
                                  EmployeeLeaveBalance employeeLeaveBalance,
-                                 LeaveApplicationFormRequest request,
-                                 List<String> messages) {
+                                 LeaveApplicationFormRequest request) {
 
     }
 

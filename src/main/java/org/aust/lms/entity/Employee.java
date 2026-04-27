@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "employees")
@@ -45,6 +46,9 @@ public class Employee {
     private Long joiningInterval;
 
     private Long grade;
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EmployeeLeaveBalance> employeeLeaveBalances;
 
     public String getEmployeeId() {
         return employeeId;
@@ -108,6 +112,10 @@ public class Employee {
 
     public Long getGrade() {
         return grade;
+    }
+
+    public List<EmployeeLeaveBalance> getEmployeeLeaveBalances() {
+        return employeeLeaveBalances;
     }
 
     public void setEmployeeId(String employeeId) {

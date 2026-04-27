@@ -21,6 +21,9 @@ public class LeaveType {
 
     private Instant lastModified;
 
+    @OneToOne(mappedBy = "leaveType", cascade = CascadeType.ALL, orphanRemoval = true)
+    private LeavePolicy policy;
+
     public Long getId() {
         return id;
     }
@@ -35,6 +38,10 @@ public class LeaveType {
 
     public Instant getLastModified() {
         return lastModified;
+    }
+
+    public LeavePolicy getPolicy() {
+        return policy;
     }
 
     public void setId(Long id) {
