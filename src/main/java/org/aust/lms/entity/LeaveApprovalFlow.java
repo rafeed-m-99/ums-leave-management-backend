@@ -28,6 +28,9 @@ public class LeaveApprovalFlow {
     @JoinColumn(name = "employee_designation_id")
     private EmployeeDesignation employeeDesignation;
 
+    @Column(name = "special_role")
+    private String specialRole;
+
     public Long getId() {
         return id;
     }
@@ -46,6 +49,10 @@ public class LeaveApprovalFlow {
 
     public Boolean getFinalStep() {
         return isFinalStep;
+    }
+
+    public String getSpecialRole() {
+        return specialRole;
     }
 
     public EmployeeDesignation getEmployeeDesignation() {
@@ -74,5 +81,9 @@ public class LeaveApprovalFlow {
 
     public void setEmployeeDesignation(EmployeeDesignation employeeDesignation) {
         this.employeeDesignation = employeeDesignation;
+    }
+
+    public void setSpecialRole(String specialRole) {
+        this.specialRole = specialRole;
     }
 }

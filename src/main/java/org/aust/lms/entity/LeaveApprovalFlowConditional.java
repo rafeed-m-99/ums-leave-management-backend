@@ -32,6 +32,9 @@ public class LeaveApprovalFlowConditional {
     @JoinColumn(name = "employee_designation_id")
     private EmployeeDesignation employeeDesignation;
 
+    @Column(name = "special_role")
+    private String specialRole;
+
     public Long getId() {
         return id;
     }
@@ -60,6 +63,10 @@ public class LeaveApprovalFlowConditional {
         return employeeDesignation;
     }
 
+    public String getSpecialRole() {
+        return specialRole;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -86,5 +93,9 @@ public class LeaveApprovalFlowConditional {
 
     public void setEmployeeDesignation(EmployeeDesignation employeeDesignation) {
         this.employeeDesignation = employeeDesignation;
+    }
+
+    public void setSpecialRole(String specialRole) {
+        this.specialRole = specialRole;
     }
 }

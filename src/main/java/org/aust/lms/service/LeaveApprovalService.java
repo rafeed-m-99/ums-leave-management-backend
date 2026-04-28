@@ -6,7 +6,7 @@ import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveActionRole;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 
 import java.time.Instant;
 import java.util.List;

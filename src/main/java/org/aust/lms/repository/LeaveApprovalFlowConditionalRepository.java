@@ -13,4 +13,17 @@ public interface LeaveApprovalFlowConditionalRepository
             Long designationId,
             Integer stepNumber
     );
+
+    Optional<LeaveApprovalFlowConditional> findByLeaveTypeIdAndEmployeeDesignationDesignationIdAndStepNumberAndSpecialRole(
+            Long leaveTypeId,
+            Long designationId,
+            Integer stepNumber,
+            String specialRole
+    );
+
+    Optional<LeaveApprovalFlowConditional> findByLeaveTypeIdAndEmployeeDesignationDesignationIdAndStepNumberAndSpecialRoleIsNull(
+            Long leaveTypeId,
+            Long designationId,
+            Integer stepNumber
+    );
 }

@@ -11,7 +11,7 @@ import org.aust.lms.exception.BadRequestException;
 import org.aust.lms.exception.NotFoundException;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;

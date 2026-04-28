@@ -6,6 +6,7 @@ import org.aust.lms.entity.Employee;
 import org.aust.lms.repository.EmployeeLeaveBalanceRepository;
 import org.aust.lms.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class LeaveBalanceService {
         this.employeeRepository = employeeRepository;
     }
 
+    @Transactional
     public LeaveBalanceListResponse getEmployeeLeaveBalance(String employeeId) {
 
         Employee employee = employeeRepository.findById(employeeId)
