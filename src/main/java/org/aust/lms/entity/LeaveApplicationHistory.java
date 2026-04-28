@@ -17,7 +17,7 @@ public class LeaveApplicationHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id")
     private LeaveApplication application;
 
@@ -43,6 +43,8 @@ public class LeaveApplicationHistory {
     private String nextApprovalRoleId;
 
     private Instant createdOn;
+
+    private Boolean isActive;
 
     @OneToMany(mappedBy = "applicationHistory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LeaveApplicationStatusHistory> statusHistory = new ArrayList<>();
@@ -99,6 +101,10 @@ public class LeaveApplicationHistory {
         return statusHistory;
     }
 
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -111,8 +117,8 @@ public class LeaveApplicationHistory {
         this.applicationStage = applicationStage;
     }
 
-    public void setFronDate(LocalDate fronDate) {
-        this.fromDate = fronDate;
+    public void setFromDate(LocalDate fromDate) {
+        this.fromDate = fromDate;
     }
 
     public void setToDate(LocalDate toDate) {
@@ -145,6 +151,10 @@ public class LeaveApplicationHistory {
 
     public void setCreatedOn(Instant createdOn) {
         this.createdOn = createdOn;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public void addStatus(LeaveApplicationStatusHistory s) {

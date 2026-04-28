@@ -1,5 +1,6 @@
 package org.aust.lms.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.aust.lms.dto.*;
 import org.aust.lms.service.LeaveApprovalQueryService;
@@ -8,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Leave Approval API", description = "APIs related to the approval process and approval flow of a leave application")
 @RestController
 @RequestMapping("/api/leave")
 public class LeaveApprovalController {

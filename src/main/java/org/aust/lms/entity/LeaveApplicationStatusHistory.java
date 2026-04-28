@@ -16,7 +16,7 @@ public class LeaveApplicationStatusHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_history_id")
     private LeaveApplicationHistory applicationHistory;
 

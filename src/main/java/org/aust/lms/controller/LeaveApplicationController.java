@@ -1,17 +1,18 @@
 package org.aust.lms.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aust.lms.dto.ApplicantLeaveDetailsResponse;
 import org.aust.lms.dto.ApplicantLeaveListResponse;
 import org.aust.lms.service.LeaveApplicationQueryService;
 import org.aust.lms.service.LeaveApplicationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Leave Application API", description = "Leave Application History related APIs for an Employee")
 @RestController
 @RequestMapping("/api/leave")
 public class LeaveApplicationController {
@@ -33,7 +34,6 @@ public class LeaveApplicationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        System.out.println("Payload: " + status + "," + actionTakenBy + "," + nextRole + "," + page + "," + size);
         List<ApplicantLeaveListResponse> allLeaves = leaveApplicationQueryService
                 .getApplicantLeaveList(employeeId, status, actionTakenBy, nextRole);
 

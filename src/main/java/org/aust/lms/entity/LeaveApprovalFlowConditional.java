@@ -14,7 +14,7 @@ public class LeaveApprovalFlowConditional {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leave_type_id")
     private LeaveType leaveType;
 
@@ -28,7 +28,7 @@ public class LeaveApprovalFlowConditional {
     @Enumerated(EnumType.STRING)
     private SpecialLeaveCondition condition;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_designation_id")
     private EmployeeDesignation employeeDesignation;
 

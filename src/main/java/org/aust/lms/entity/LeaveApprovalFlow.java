@@ -13,7 +13,7 @@ public class LeaveApprovalFlow {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leave_type_id")
     private LeaveType leaveType;
 
@@ -24,7 +24,7 @@ public class LeaveApprovalFlow {
 
     private Boolean isFinalStep;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_designation_id")
     private EmployeeDesignation employeeDesignation;
 

@@ -15,7 +15,7 @@ public class Employee {
     @Column(name = "employee_id", length = 15)
     private String employeeId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "designation_designation_id")
     private EmployeeDesignation designation;
 
@@ -49,6 +49,9 @@ public class Employee {
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EmployeeLeaveBalance> employeeLeaveBalances;
+
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EmployeeEarnedLeaveHistoy> employeeEarnedLeaveHistoy;
 
     public String getEmployeeId() {
         return employeeId;
@@ -116,6 +119,10 @@ public class Employee {
 
     public List<EmployeeLeaveBalance> getEmployeeLeaveBalances() {
         return employeeLeaveBalances;
+    }
+
+    public List<EmployeeEarnedLeaveHistoy> getEmployeeEarnedLeaveHistoy() {
+        return employeeEarnedLeaveHistoy;
     }
 
     public void setEmployeeId(String employeeId) {

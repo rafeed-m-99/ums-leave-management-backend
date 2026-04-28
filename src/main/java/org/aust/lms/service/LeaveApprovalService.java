@@ -4,6 +4,7 @@ import org.aust.lms.dto.*;
 import org.aust.lms.entity.*;
 import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.enums.LeaveActionRole;
+import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
@@ -170,7 +171,7 @@ public class LeaveApprovalService {
         // 5. IF CURRENT STEP IS FINAL → FINALIZE
         // =========================
         if (isCurrentFinalStep) {
-            finalizeLeave(history, "Final approval", request.roleId());
+            finalizeLeave(history, request.roleId());
             return new LeaveApprovalResponse(true, "Leave fully approved");
         }
 
@@ -230,45 +231,30 @@ public class LeaveApprovalService {
     // =====================================================
     // FINALIZATION LOGIC
     // =====================================================
-    private void finalizeLeave(LeaveApplicationHistory history, String comment) {
+    private void finalizeLeave(LeaveApplicationHistory history, String roleId) {
 
         // TODO:
-        // - deduct leave balance
+        // - deduct leave balance / balance roleback if cancelled
         // - insert into emp_leave_balance_history
         // - handle EL conversion if needed
 
-        LeaveApplicationStatusHistory finalStatus = new LeaveApplicationStatusHistory();
-        finalStatus.setApplicationHistory(history);
-        finalStatus.setActionTakenOn(Instant.now());
-        finalStatus.setActionTakenBy(getCurrentUserRole());
-        finalStatus.setActionStatus(LeaveActionStatus.APPROVED);
-        finalStatus.setComment(comment);
-
-        statusRepo.save(finalStatus);
-    }
-
-    private void finalizeLeave(LeaveApplicationHistory history, String comment, String roleId) {
-
-        // TODO:
-        // - deduct leave balance
-        // - insert into emp_leave_balance_history
-        // - handle EL conversion if needed
-
-//        LeaveApplicationStatusHistory finalStatus = new LeaveApplicationStatusHistory();
-//        finalStatus.setApplicationHistory(history);
-//        finalStatus.setActionTakenOn(Instant.now());
-//        finalStatus.setActionTakenBy(LeaveActionRole.SYSTEM);
-//        finalStatus.setActionStatus(LeaveActionStatus.APPROVED);
-//        finalStatus.setComment(comment);
+        if (history.getApplicationStage() == LeaveApplicationStage.CANCELLATION) {
+            LeaveApplicationStatusHistory finalStatus = new LeaveApplicationStatusHistory();
+            finalStatus.setApplicationHistory(history);
+            finalStatus.setActionTakenOn(Instant.now());
+            finalStatus.setActionTakenBy(LeaveActionRole.valueOf(roleId));
+            finalStatus.setActionStatus(LeaveActionStatus.CANCELLED);
+            finalStatus.setComment(null);
+            statusRepo.save(finalStatus);
+        }
 
         // Set nextApprovalRole = null in applicationHistory
         LeaveApplicationHistory finalHistory = leaveApplicationHistoryRepository.findById(history.getId()).orElse(null);
         if (finalHistory != null) {
             finalHistory.setNextApprovalRoleId(null);
+            finalHistory.setApplicationStep(null);
             leaveApplicationHistoryRepository.save(finalHistory);
         }
-
-//        statusRepo.save(finalStatus);
     }
 
     // =====================================================

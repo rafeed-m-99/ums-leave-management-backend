@@ -12,6 +12,7 @@ public record ApplicantLeaveDetailsResponse(
         LocalDate to,
         Integer duration,
         String reason,
+        Boolean exBangladeshLeave,
         List<AttachmentDto> attachments, // empty for now
         String applicationStage,
         String status,

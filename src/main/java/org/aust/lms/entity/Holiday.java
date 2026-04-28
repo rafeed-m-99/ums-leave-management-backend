@@ -14,7 +14,7 @@ public class Holiday {
     @Id
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "holiday_type_id")
     private HolidayType holidayType;
 

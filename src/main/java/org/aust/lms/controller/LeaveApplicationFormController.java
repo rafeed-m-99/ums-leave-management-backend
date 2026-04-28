@@ -1,7 +1,9 @@
 package org.aust.lms.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aust.lms.dto.LeaveApplicationFormRequest;
 import org.aust.lms.dto.LeaveApplicationResponse;
+import org.aust.lms.dto.LeaveApplicationUpdateRequest;
 import org.aust.lms.dto.TempUploadResponse;
 import org.aust.lms.entity.LeaveAttachment;
 import org.aust.lms.repository.LeaveAttachmentRepository;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "Leave Application Form API", description = "Leave Application History form and attachments related APIs for an Employee")
 @RestController
 @RequestMapping("/api/leave")
 public class LeaveApplicationFormController {
@@ -29,10 +32,6 @@ public class LeaveApplicationFormController {
         this.attachmentRepo = attachmentRepo;
     }
 
-    /**
-     * APPLY FOR A LEAVE
-     * Matches: POST /api/leave/apply/{employeeId}
-     */
     @PostMapping("/apply/{employeeId}/{designationId}/{departmentId}")
     public ResponseEntity<LeaveApplicationResponse> applyForLeave(
             @PathVariable String employeeId,
@@ -50,6 +49,27 @@ public class LeaveApplicationFormController {
                         request,
                         sessionId
                 );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/modify/{applicationId}")
+    public ResponseEntity<LeaveApplicationResponse> modifyLeave(
+            @PathVariable Long applicationId,
+            @RequestBody LeaveApplicationUpdateRequest request
+    ) {
+        LeaveApplicationResponse response =
+                leaveApplicationFormService.modifyApplication(applicationId, request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/cancel/{applicationId}")
+    public ResponseEntity<LeaveApplicationResponse> cancelLeave(
+            @PathVariable Long applicationId
+    ) {
+        LeaveApplicationResponse response =
+                leaveApplicationFormService.cancelApplication(applicationId);
 
         return ResponseEntity.ok(response);
     }
@@ -78,7 +98,7 @@ public class LeaveApplicationFormController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(att.getFileType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + att.getOriginalFileName() + "\"")
+                        "inline; filename=\"" + att.getOriginalFileName() + "\"")
                 .body(file);
     }
 
@@ -90,18 +110,18 @@ public class LeaveApplicationFormController {
 //        return ResponseEntity.ok("Deleted");
 //    }
 
-    /**
-     * CONVERT EARNED LEAVE
-     */
-    @PostMapping("/convert-el/{employeeId}")
-    public ResponseEntity<?> convertEarnedLeave(
-            @PathVariable String employeeId
-    ) {
-
-        // TODO: call service layer
-        // leaveService.convertEarnedLeave(employeeId);
-
-        return ResponseEntity.ok("Earned leave converted successfully");
-    }
+//    /**
+//     * CONVERT EARNED LEAVE
+//     */
+//    @PostMapping("/convert-el/{employeeId}")
+//    public ResponseEntity<?> convertEarnedLeave(
+//            @PathVariable String employeeId
+//    ) {
+//
+//        // TODO: call service layer
+//        // leaveService.convertEarnedLeave(employeeId);
+//
+//        return ResponseEntity.ok("Earned leave converted successfully");
+//    }
 
 }

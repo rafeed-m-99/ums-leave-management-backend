@@ -4,6 +4,5 @@ public record AttachmentDto (
         Long id,
         String fileName,
         String fileType,
-        String description,
-        String fileUrl
+        String description
 ) { }

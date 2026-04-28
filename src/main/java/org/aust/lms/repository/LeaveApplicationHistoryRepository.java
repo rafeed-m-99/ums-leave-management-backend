@@ -47,6 +47,7 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
       AND (:status IS NULL OR s.actionStatus = :status)
       AND (:applicationStage IS NULL OR h.applicationStage = :applicationStage)
       AND (:leaveType IS NULL OR lt.name = :leaveType)
+      AND h.isActive = true
 """)
     Page<LeaveApprovalListResponse> findPendingByFilters(
             @Param("roleId") String roleId,
@@ -65,6 +66,7 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
           FROM LeaveApplicationHistory h2
           WHERE h2.application.id = :applicationId
         )
+        AND h.isActive = true
     """)
     Optional<LeaveApplicationHistory> findLatestHistory(@Param("applicationId") Long applicationId);
 
@@ -77,12 +79,13 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
               FROM LeaveApplicationHistory lah2
               WHERE lah2.application.id = lah.application.id
           )
+          AND lah.isActive = true
     """)
     List<LeaveApplicationHistory> findLatestHistories(@Param("applicationIds") List<Long> applicationIds);
 
     @Query("""
         SELECT lah FROM LeaveApplicationHistory lah
-        WHERE lah.application.id = :applicationId
+        WHERE lah.application.id = :applicationId and lah.isActive = true
         ORDER BY lah.createdOn ASC
     """)
     List<LeaveApplicationHistory> findByApplicationIdOrderByCreatedOn(Long applicationId);

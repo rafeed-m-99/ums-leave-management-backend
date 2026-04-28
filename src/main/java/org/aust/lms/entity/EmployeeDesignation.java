@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "emp_designation")
@@ -31,6 +32,12 @@ public class EmployeeDesignation {
     private LocalDate updatedOn;
 
     private String lastModified;
+
+    @OneToMany(mappedBy = "employeeDesignation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LeaveApprovalFlow> leaveApprovalFlowList;
+
+    @OneToMany(mappedBy = "employeeDesignation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LeaveApprovalFlowConditional> leaveApprovalFlowConditionalList;
 
     public Long getDesignationId() {
         return designationId;
@@ -70,6 +77,14 @@ public class EmployeeDesignation {
 
     public String getLastModified() {
         return lastModified;
+    }
+
+    public List<LeaveApprovalFlow> getLeaveApprovalFlowList() {
+        return leaveApprovalFlowList;
+    }
+
+    public List<LeaveApprovalFlowConditional> getLeaveApprovalFlowConditionalList() {
+        return leaveApprovalFlowConditionalList;
     }
 
     public void setDesignationId(Long designationId) {
