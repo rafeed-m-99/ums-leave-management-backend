@@ -1,6 +1,5 @@
 package org.aust.lms.service;
 
-import jakarta.transaction.Transactional;
 import org.aust.lms.dto.ApplicantLeaveListResponse;
 import org.aust.lms.entity.LeaveApplication;
 import org.aust.lms.entity.LeaveApplicationHistory;
@@ -12,6 +11,7 @@ import org.aust.lms.repository.LeaveApplicationStatusHistoryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;

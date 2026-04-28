@@ -1,6 +1,6 @@
 package org.aust.lms.service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.aust.lms.dto.LeaveApprovalListResponse;
 import org.aust.lms.dto.LeaveApprovalPageResponse;

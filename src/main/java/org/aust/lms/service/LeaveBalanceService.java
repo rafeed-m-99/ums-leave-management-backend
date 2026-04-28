@@ -6,7 +6,7 @@ import org.aust.lms.entity.Employee;
 import org.aust.lms.repository.EmployeeLeaveBalanceRepository;
 import org.aust.lms.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 

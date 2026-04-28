@@ -12,7 +12,7 @@ import org.aust.lms.repository.LeaveApplicationStatusHistoryRepository;
 import org.aust.lms.repository.LeaveAttachmentRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;

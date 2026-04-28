@@ -7,14 +7,13 @@ import org.aust.lms.enums.LeaveActionRole;
 import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class LeaveApprovalService {
 
     private final LeaveApplicationRepository leaveApplicationRepository;
