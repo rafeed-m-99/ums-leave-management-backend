@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-public record ApplicantLeaveDetailsResponse(
+public record ApplicantLeaveDetailsForUpdateResponse(
         Long applicationId,
         Instant appliedOn,
         Long leaveTypeId,
@@ -15,8 +15,6 @@ public record ApplicantLeaveDetailsResponse(
         String reason,
         Boolean exBangladeshLeave,
         List<AttachmentDto> attachments, // empty for now
-        String applicationStage,
-        String status,
-        String actionTakenBy,
-        Instant actionTakenOn
-) {}
+        String applicationStage
+) {
+}

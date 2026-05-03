@@ -58,30 +58,43 @@ public class LeaveApplicationQueryService {
 
         // 4️⃣ Filter applications based on status
         List<LeaveApplication> filteredApps = applications.stream().filter(app -> {
+
             LeaveApplicationHistory lh = latestHistoryMap.get(app.getId());
             LeaveApplicationStatusHistory ls = lh != null ? latestStatusMap.get(lh.getId()) : null;
 
             if (lh == null) return false;
 
+            // =========================
+            // ✅ CANCELLED LOGIC (NEW)
+            // =========================
+            if ("CANCELLED".equals(status)) {
+                return ls != null && "CANCELLED".equals(ls.getActionStatus().name());
+            }
+
+            // =========================
             // ✅ WAITING LOGIC
+            // =========================
             if ("WAITING".equals(status)) {
+
                 if (ls != null) {
                     String actionStatus = ls.getActionStatus().name();
 
-                    if ("APPROVED".equals(actionStatus) || "REJECTED".equals(actionStatus)) {
-                        System.out.println("Hello");
+                    // exclude final states
+                    if ("APPROVED".equals(actionStatus)
+                            || "REJECTED".equals(actionStatus)
+                            || "CANCELLED".equals(actionStatus)) {
                         return false;
                     }
                 }
 
-                // 🟢 Step 2: Now check nextRole
                 String mappedNextRole = getActionRoleFromRoleId(lh.getNextApprovalRoleId());
 
-                System.out.println("mappedNextRole: " + mappedNextRole);
                 return nextRole == null || mappedNextRole.equals(nextRole);
             }
 
-            // ✅ APPROVED / REJECTED LOGIC (already correct)
+            // =========================
+            // ✅ APPROVED / REJECTED
+            // =========================
             if ("APPROVED".equals(status) || "REJECTED".equals(status)) {
                 if (ls == null) return false;
 
@@ -89,7 +102,11 @@ public class LeaveApplicationQueryService {
                         && ls.getActionStatus().name().equals(status);
             }
 
-            return true; // ALL
+            // =========================
+            // ✅ ALL
+            // =========================
+            return true;
+
         }).toList();
 
         // 5️⃣ Map to DTO

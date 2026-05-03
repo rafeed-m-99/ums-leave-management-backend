@@ -1,5 +1,6 @@
 package org.aust.lms.service;
 
+import org.aust.lms.dto.ApplicantLeaveDetailsForUpdateResponse;
 import org.aust.lms.dto.ApplicantLeaveDetailsResponse;
 import org.aust.lms.dto.AttachmentDto;
 import org.aust.lms.entity.LeaveApplication;
@@ -82,6 +83,7 @@ public class LeaveApplicationService {
             return new ApplicantLeaveDetailsResponse(
                     app.getId(),
                     app.getAppliedOn(),
+                    app.getLeaveType().getId(),
                     app.getLeaveType().getName(),
                     h.getFromDate(),
                     h.getToDate(),
@@ -96,5 +98,39 @@ public class LeaveApplicationService {
             );
 
         }).toList();
+    }
+
+    @Transactional
+    public ApplicantLeaveDetailsForUpdateResponse getLatestLeaveDetails(Long applicationId) {
+        LeaveApplication app = leaveApplicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        LeaveApplicationHistory history = leaveApplicationHistoryRepository
+                .findLatestHistory(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application history not found"));
+
+        List<AttachmentDto> attachmentDtos = app.getAttachments().stream()
+                .map(att -> new AttachmentDto(
+                        att.getId(),
+                        att.getOriginalFileName(),
+                        att.getFileType(),
+                        att.getDescription()
+                ))
+                .toList();
+
+        return new ApplicantLeaveDetailsForUpdateResponse(
+                app.getId(),
+                app.getAppliedOn(),
+                app.getLeaveType().getId(),
+                app.getLeaveType().getName(),
+                history.getFromDate(),
+                history.getToDate(),
+                history.getTotalDays(),
+                history.getReason(),
+                history.getExBangladeshLeave(),
+                attachmentDtos,
+                history.getApplicationStage().name()
+        );
     }
 }

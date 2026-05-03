@@ -1,6 +1,7 @@
 package org.aust.lms.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.aust.lms.dto.ApplicantLeaveDetailsForUpdateResponse;
 import org.aust.lms.dto.ApplicantLeaveDetailsResponse;
 import org.aust.lms.dto.ApplicantLeaveListResponse;
 import org.aust.lms.service.LeaveApplicationQueryService;
@@ -58,6 +59,15 @@ public class LeaveApplicationController {
     ) {
         return ResponseEntity.ok(
                 leaveApplicationService.getLeaveDetails(employeeId, applicationId)
+        );
+    }
+
+    @GetMapping("/details/{applicationId}")
+    public ResponseEntity<ApplicantLeaveDetailsForUpdateResponse> getLeaveDetails(
+            @PathVariable Long applicationId
+    ) {
+        return ResponseEntity.ok(
+                leaveApplicationService.getLatestLeaveDetails(applicationId)
         );
     }
 }
