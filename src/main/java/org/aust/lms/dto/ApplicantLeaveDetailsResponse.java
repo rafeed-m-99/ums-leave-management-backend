@@ -18,5 +18,6 @@ public record ApplicantLeaveDetailsResponse(
         String applicationStage,
         String status,
         String actionTakenBy,
+        String nextRole,
         Instant actionTakenOn
 ) {}

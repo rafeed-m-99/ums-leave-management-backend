@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.aust.lms.dto.ApplicantLeaveDetailsForUpdateResponse;
 import org.aust.lms.dto.ApplicantLeaveDetailsResponse;
 import org.aust.lms.dto.ApplicantLeaveListResponse;
+import org.aust.lms.dto.LeaveApplicationTimelineResponse;
 import org.aust.lms.service.LeaveApplicationQueryService;
 import org.aust.lms.service.LeaveApplicationService;
 import org.springframework.data.domain.Page;
@@ -68,6 +69,15 @@ public class LeaveApplicationController {
     ) {
         return ResponseEntity.ok(
                 leaveApplicationService.getLatestLeaveDetails(applicationId)
+        );
+    }
+
+    @GetMapping("/timeline/{applicationId}")
+    public ResponseEntity<List<LeaveApplicationTimelineResponse>> getLeaveTimeline(
+            @PathVariable Long applicationId
+    ) {
+        return ResponseEntity.ok(
+                leaveApplicationService.getLeaveTimeline(applicationId)
         );
     }
 }

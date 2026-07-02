@@ -2,6 +2,7 @@ package org.aust.lms.enums;
 
 import lombok.*;
 
+@Getter
 public enum LeaveActionStatus {
     WAITING (1, "Waiting"),
     REJECTED(2, "Rejected"),
@@ -14,5 +15,9 @@ public enum LeaveActionStatus {
     LeaveActionStatus(int value, String description) {
         this.value = value;
         this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

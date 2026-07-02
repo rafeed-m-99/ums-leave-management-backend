@@ -8,10 +8,12 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveApplicationHistory, Long> {
 
     public List<LeaveApplicationHistory> findLeaveApplicationHistoriesByNextApprovalRoleId(String nextApprovalRoleId);
@@ -70,6 +72,14 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
     """)
     Optional<LeaveApplicationHistory> findLatestHistory(@Param("applicationId") Long applicationId);
 
+    @Query("""
+        SELECT h
+        FROM LeaveApplicationHistory h
+        WHERE h.application.id = :applicationId
+        ORDER BY h.id ASC
+    """)
+    List<LeaveApplicationHistory> findAllHistories(@Param("applicationId") Long applicationId);
+
     // 2️⃣ Latest history for given leave application IDs
     @Query("""
         SELECT lah FROM LeaveApplicationHistory lah
@@ -89,4 +99,59 @@ public interface LeaveApplicationHistoryRepository extends JpaRepository<LeaveAp
         ORDER BY lah.createdOn ASC
     """)
     List<LeaveApplicationHistory> findByApplicationIdOrderByCreatedOn(Long applicationId);
+
+    @Query("""
+        SELECT h
+        FROM LeaveApplicationHistory h
+        WHERE h.application.id = :applicationId
+            AND h.applicationStage = org.aust.lms.enums.LeaveApplicationStage.INITIAL
+    """)
+    Optional<LeaveApplicationHistory> findInitialHistory(Long applicationId);
+
+    @Query("""
+        SELECT h
+        FROM LeaveApplicationHistory h
+        WHERE h.application.id = :applicationId
+            AND h.id < :currentHistoryId
+        ORDER BY h.id DESC
+        LIMIT 1
+    """)
+    Optional<LeaveApplicationHistory> findPreviousHistory(
+            Long applicationId,
+            Long currentHistoryId);
+
+    @Query("""
+        SELECT COUNT(DISTINCT h.application.id)
+        FROM LeaveApplicationHistory h
+        WHERE h.application.employee.employeeId = :employeeId
+        AND h.application.leaveType.id = :leaveTypeId
+        AND h.isActive = true
+        AND EXISTS (
+            SELECT s
+            FROM LeaveApplicationStatusHistory s
+            WHERE s.applicationHistory = h
+            AND s.actionStatus='APPROVED'
+        )
+    """)
+    long countApprovedApplications(
+            String employeeId,
+            Long leaveTypeId
+    );
+
+    @Query("""
+        SELECT COUNT(h)
+        FROM LeaveApplicationHistory h
+        JOIN h.application a
+        JOIN LeaveApplicationStatusHistory s
+        ON s.applicationHistory = h
+        WHERE a.employee.employeeId = :employeeId
+        AND h.isSandwichLeave = true
+        AND h.isActive = true
+        AND s.actionStatus = org.aust.lms.enums.LeaveActionStatus.APPROVED
+        AND YEAR(h.fromDate) = :year
+    """)
+    long countApprovedSandwichLeaves(
+            String employeeId,
+            Integer year
+    );
 }

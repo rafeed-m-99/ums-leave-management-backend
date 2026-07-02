@@ -5,6 +5,7 @@ import org.aust.lms.entity.LeaveApplication;
 import org.aust.lms.entity.LeaveApplicationHistory;
 import org.aust.lms.entity.LeaveApplicationStatusHistory;
 import org.aust.lms.enums.LeaveActionRole;
+import org.aust.lms.enums.LeaveActionStatus;
 import org.aust.lms.repository.LeaveApplicationHistoryRepository;
 import org.aust.lms.repository.LeaveApplicationRepository;
 import org.aust.lms.repository.LeaveApplicationStatusHistoryRepository;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,26 +78,50 @@ public class LeaveApplicationQueryService {
             // =========================
             if ("WAITING".equals(status)) {
 
+                // Must still be in workflow
+                if (lh.getNextApprovalRoleId() == null) {
+                    return false; // already finalized
+                }
+
+                // must match next role filter
+                String mappedNextRole =
+                        getActionRoleFromRoleId(lh.getNextApprovalRoleId());
+
+                if (nextRole != null &&
+                        !Objects.equals(mappedNextRole, nextRole)) {
+                    return false;
+                }
+
+                // IMPORTANT:
+                // do NOT block APPROVED status here
+                // because APPROVED is step-level, not final-state
+
                 if (ls != null) {
                     String actionStatus = ls.getActionStatus().name();
 
-                    // exclude final states
-                    if ("APPROVED".equals(actionStatus)
-                            || "REJECTED".equals(actionStatus)
+                    if ("REJECTED".equals(actionStatus)
                             || "CANCELLED".equals(actionStatus)) {
-                        return false;
+                        return false; // only terminal rejections/cancellations
                     }
                 }
 
-                String mappedNextRole = getActionRoleFromRoleId(lh.getNextApprovalRoleId());
-
-                return nextRole == null || mappedNextRole.equals(nextRole);
+                return true;
             }
 
             // =========================
             // ✅ APPROVED / REJECTED
             // =========================
-            if ("APPROVED".equals(status) || "REJECTED".equals(status)) {
+            if ("APPROVED".equals(status)) {
+
+                if (ls == null) {
+                    return false;
+                }
+
+                return lh.getNextApprovalRoleId() == null
+                        && ls.getActionStatus() == LeaveActionStatus.APPROVED
+                        && ls.getActionTakenBy() == LeaveActionRole.valueOf(actionRole);
+            }
+            if (/*"APPROVED".equals(status) || */"REJECTED".equals(status)) {
                 if (ls == null) return false;
 
                 return ls.getActionTakenBy().name().equals(actionRole)
@@ -121,7 +147,7 @@ public class LeaveApplicationQueryService {
                     lh.getFromDate(),
                     lh.getToDate(),
                     lh.getTotalDays(),
-                    lh.getApplicationStage().name(),
+                    lh.getApplicationStage() != null ? lh.getApplicationStage().name() : null,
                     ls != null ? ls.getActionStatus().name() : null,
                     ls != null ? ls.getActionTakenBy().name() : null,
                     getActionRoleFromRoleId(lh.getNextApprovalRoleId())

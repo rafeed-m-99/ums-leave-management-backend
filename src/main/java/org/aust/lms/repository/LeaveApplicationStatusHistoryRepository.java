@@ -5,9 +5,12 @@ import org.aust.lms.entity.LeaveApplicationStatusHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
+@Repository
 public interface LeaveApplicationStatusHistoryRepository extends JpaRepository<LeaveApplicationStatusHistory, Long> {
 
     @Query("""
@@ -38,15 +41,24 @@ public interface LeaveApplicationStatusHistoryRepository extends JpaRepository<L
 //    List<LeaveApplicationStatusHistory> findLatestNonSystemStatuses(@Param("historyIds") List<Long> historyIds);
 
     @Query("""
-        SELECT lash FROM LeaveApplicationStatusHistory lash
-        WHERE lash.applicationHistory.id IN :historyIds
-          AND lash.actionTakenOn = (
-              SELECT MAX(lash2.actionTakenOn)
-              FROM LeaveApplicationStatusHistory lash2
-              WHERE lash2.applicationHistory.id = lash.applicationHistory.id
-          )
+        select s
+           from LeaveApplicationStatusHistory s
+           where s.id in (
+               select max(x.id)
+               from LeaveApplicationStatusHistory x
+               where x.applicationHistory.id in :historyIds
+                 and x.actionTakenBy <> org.aust.lms.enums.LeaveActionRole.SYSTEM
+               group by x.applicationHistory.id
+           )
     """)
     List<LeaveApplicationStatusHistory> findLatestNonSystemStatuses(@Param("historyIds") List<Long> historyIds);
+
+    @Query("""
+        SELECT lash FROM LeaveApplicationStatusHistory lash
+        WHERE lash.applicationHistory.id = :historyId
+            ORDER BY lash.id DESC LIMIT 1
+    """)
+    Optional<LeaveApplicationStatusHistory> findLatestStatus(Long historyId);
 
     @Query("""
         SELECT lash FROM LeaveApplicationStatusHistory lash
@@ -54,6 +66,13 @@ public interface LeaveApplicationStatusHistoryRepository extends JpaRepository<L
             AND lash.actionTakenBy <> 'SYSTEM'
     """)
     List<LeaveApplicationStatusHistory> findNonSystemStatuses(List<Long> historyIds);
+
+    @Query("""
+        SELECT lash FROM LeaveApplicationStatusHistory lash
+        WHERE lash.applicationHistory.id = :historyId
+            AND lash.actionTakenBy <> 'SYSTEM'
+    """)
+    List<LeaveApplicationStatusHistory> findNonSystemStatuses(Long historyId);
 
     // Optional: filter APPROVED/REJECTED by role in JPQL
     @Query("""

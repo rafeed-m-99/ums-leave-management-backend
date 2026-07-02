@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Leave Approval API", description = "APIs related to the approval process and approval flow of a leave application")
 @RestController
 @RequestMapping("/api/leave")
@@ -57,12 +59,21 @@ public class LeaveApprovalController {
         );
     }
 
-    @PostMapping("/approve")
+    @PostMapping("/process-approval")
     public ResponseEntity<LeaveApprovalResponse> approveLeave(
             @RequestBody LeaveApprovalRequest request
     ) {
         return ResponseEntity.ok(
                 leaveApprovalService.processApproval(request)
+        );
+    }
+
+    @GetMapping("/approval/{applicationId}/timeline")
+    public ResponseEntity<List<LeaveApplicationTimelineGroupResponse>> getLeaveTimeline(
+            @PathVariable Long applicationId
+    ) {
+        return ResponseEntity.ok(
+                leaveApprovalService.getLeaveTimeline(applicationId)
         );
     }
 }

@@ -2,9 +2,11 @@ package org.aust.lms.repository;
 
 import org.aust.lms.entity.LeaveApprovalFlow;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+@Repository
 public interface LeaveApprovalFlowRepository
         extends JpaRepository<LeaveApprovalFlow, Long> {
 

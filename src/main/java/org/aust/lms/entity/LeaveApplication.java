@@ -34,6 +34,9 @@ public class LeaveApplication {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LeaveApplicationHistory> history = new ArrayList<>();
 
+    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private LeaveApplicationSubstitute substitute;
+
     public Long getId() {
         return id;
     }
@@ -60,6 +63,10 @@ public class LeaveApplication {
 
     public List<LeaveApplicationHistory> getHistory() {
         return history;
+    }
+
+    public LeaveApplicationSubstitute getSubstitute() {
+        return substitute;
     }
 
     public void setId(Long id) {
@@ -89,6 +96,11 @@ public class LeaveApplication {
     public void addHistory(LeaveApplicationHistory h) {
         history.add(h);
         h.setApplication(this);
+    }
+
+    public void setSubstitute(LeaveApplicationSubstitute substitute) {
+        this.substitute = substitute;
+        substitute.setApplication(this);
     }
 
     public void addAttachment(LeaveAttachment attachment) {

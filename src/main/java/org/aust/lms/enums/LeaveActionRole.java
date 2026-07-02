@@ -1,5 +1,8 @@
 package org.aust.lms.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum LeaveActionRole {
     APPLICANT(1, "Applicant"),
     HEAD(2, "Head/Director"),
@@ -13,5 +16,9 @@ public enum LeaveActionRole {
     LeaveActionRole(int value, String description) {
         this.value = value;
         this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

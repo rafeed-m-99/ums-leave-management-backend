@@ -18,5 +18,6 @@ public record LeaveApplicationDetailsResponse(
         String reason,
         String actionRole,
         List<AttachmentDto> attachments,
-        List<StatusHistoryDto> history
+        List<StatusHistoryDto> history,
+        String substitute
 ) {}

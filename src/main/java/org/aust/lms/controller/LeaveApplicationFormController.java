@@ -1,10 +1,7 @@
 package org.aust.lms.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.aust.lms.dto.LeaveApplicationFormRequest;
-import org.aust.lms.dto.LeaveApplicationResponse;
-import org.aust.lms.dto.LeaveApplicationUpdateRequest;
-import org.aust.lms.dto.TempUploadResponse;
+import org.aust.lms.dto.*;
 import org.aust.lms.entity.LeaveAttachment;
 import org.aust.lms.repository.LeaveAttachmentRepository;
 import org.aust.lms.service.FileStorageService;
@@ -43,6 +40,27 @@ public class LeaveApplicationFormController {
 
         LeaveApplicationResponse response =
                 leaveApplicationFormService.applyForLeave(
+                        employeeId,
+                        designationId,
+                        departmentId,
+                        request,
+                        sessionId
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/apply/head/{employeeId}/{designationId}/{departmentId}")
+    public ResponseEntity<LeaveApplicationResponse> applyForLeaveForHead(
+            @PathVariable String employeeId,
+            @PathVariable Long designationId,
+            @PathVariable String departmentId,
+            @RequestBody LeaveApplicationFormRequestSub request,
+            @RequestParam(required = false) String sessionId
+    ) {
+
+        LeaveApplicationResponse response =
+                leaveApplicationFormService.applyForLeaveWithSubstitute(
                         employeeId,
                         designationId,
                         departmentId,
