@@ -7,6 +7,7 @@ import org.aust.lms.enums.LeaveApplicationStage;
 import org.aust.lms.enums.LeaveActionRole;
 import org.aust.lms.exception.BadRequestException;
 import org.aust.lms.exception.NotFoundException;
+import org.aust.lms.exception.ValidationException;
 import org.aust.lms.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -452,22 +453,26 @@ public class LeaveApplicationFormService {
     private void validatePolicy(Employee employee,
                                 LeavePolicy policy,
                                 LeaveApplicationFormRequest request) {
+        List<String> errors = new ArrayList<>();
+
         LocalDate from = LocalDate.parse(request.from());
         LocalDate to = LocalDate.parse(request.to());
 
         int days = (int) ChronoUnit.DAYS.between(from, to) + 1;
 
         // 1. Years of service
-        validateMinimumService(employee, policy);
+        addErrorIfNotNull(errors, validateMinimumService(employee, policy));
 
         // 2. Max duration per application
-        validateApplicationDuration(policy, days);
+        addErrorIfNotNull(errors, validateApplicationDuration(policy, days));
 
         // 3. Ex Bangladesh
-        validateExBangladesh(policy, request);
+        addErrorIfNotNull(errors, validateExBangladesh(policy, request));
 
         // 4. Max times in career
-        validateCareerLimit(employee, policy);
+        addErrorIfNotNull(errors, validateCareerLimit(employee, policy));
+
+        throwIfErrors(errors);
 
     }
 
@@ -475,29 +480,33 @@ public class LeaveApplicationFormService {
                                 LeavePolicy policy,
                                 LeaveApplicationFormRequestSub request) {
 
+        List<String> errors = new ArrayList<>();
+
         LocalDate from = LocalDate.parse(request.from());
         LocalDate to = LocalDate.parse(request.to());
 
         int days = (int) ChronoUnit.DAYS.between(from, to) + 1;
 
         // 1. Years of service
-        validateMinimumService(employee, policy);
+        addErrorIfNotNull(errors, validateMinimumService(employee, policy));
 
         // 2. Max duration per application
-        validateApplicationDuration(policy, days);
+        addErrorIfNotNull(errors, validateApplicationDuration(policy, days));
 
         // 3. Ex Bangladesh
-        validateExBangladesh(policy, request);
+        addErrorIfNotNull(errors, validateExBangladesh(policy, request));
 
         // 4. Max times in career
-        validateCareerLimit(employee, policy);
+        addErrorIfNotNull(errors, validateCareerLimit(employee, policy));
+
+        throwIfErrors(errors);
 
     }
 
-    private void validateMinimumService(Employee employee, LeavePolicy policy) {
+    private String validateMinimumService(Employee employee, LeavePolicy policy) {
 
         if (policy.getMinYearsOfService() == null)
-            return;
+            return null;
 
         long years =
                 ChronoUnit.YEARS.between(
@@ -505,14 +514,13 @@ public class LeaveApplicationFormService {
                         LocalDate.now());
 
         if (years < policy.getMinYearsOfService()) {
-            throw new BadRequestException(
-                    "Minimum " +
-                            policy.getMinYearsOfService() +
-                            " years of service required.");
+            return "Minimum " + policy.getMinYearsOfService() + " years of service required.";
         }
+
+        return null;
     }
 
-    private void validateApplicationDuration(
+    private String validateApplicationDuration(
             LeavePolicy policy,
             int duration
     ) {
@@ -521,14 +529,13 @@ public class LeaveApplicationFormService {
 
         if (max != null && duration > max) {
 
-            throw new BadRequestException(
-                    "Maximum " + max +
-                            " days allowed in one application.");
+            return "Maximum " + max + " days allowed in one application.";
         }
 
+        return null;
     }
 
-    private void validateExBangladesh(
+    private String validateExBangladesh(
             LeavePolicy policy,
             LeaveApplicationFormRequest request
     ) {
@@ -536,14 +543,14 @@ public class LeaveApplicationFormService {
         if (Boolean.TRUE.equals(request.exBdLeave())
                 && !Boolean.TRUE.equals(policy.getAllowedExBDLeave())) {
 
-            throw new BadRequestException(
-                    "This leave type cannot be taken as Ex-Bangladesh leave.");
+            return "This leave type cannot be taken as Ex-Bangladesh leave.";
 
         }
 
+        return null;
     }
 
-    private void validateExBangladesh(
+    private String validateExBangladesh(
             LeavePolicy policy,
             LeaveApplicationFormRequestSub request
     ) {
@@ -551,20 +558,20 @@ public class LeaveApplicationFormService {
         if (Boolean.TRUE.equals(request.exBdLeave())
                 && !Boolean.TRUE.equals(policy.getAllowedExBDLeave())) {
 
-            throw new BadRequestException(
-                    "This leave type cannot be taken as Ex-Bangladesh leave.");
+            return "This leave type cannot be taken as Ex-Bangladesh leave.";
 
         }
 
+        return null;
     }
 
-    private void validateCareerLimit(
+    private String validateCareerLimit(
             Employee employee,
             LeavePolicy policy
     ) {
 
         if (policy.getMaxTimesInCareer() == null)
-            return;
+            return null;
 
         long count =
                 leaveApplicationHistoryRepository.countApprovedApplications(
@@ -573,11 +580,11 @@ public class LeaveApplicationFormService {
 
         if (count >= policy.getMaxTimesInCareer()) {
 
-            throw new BadRequestException(
-                    "Maximum number of applications reached.");
+            return "Maximum number of applications reached.";
 
         }
 
+        return null;
     }
 
     private void validateBalance(Employee employee,
@@ -591,8 +598,23 @@ public class LeaveApplicationFormService {
 
         if (balance.getDaysLeft() < duration) {
 
-            throw new BadRequestException(
-                    "Insufficient leave balance.");
+            throw new BadRequestException("Insufficient leave balance.");
+
+        }
+    }
+
+    private void validateBalance(Employee employee,
+                                 EmployeeLeaveBalance balance,
+                                 LeaveApplicationFormRequestSub request) {
+        int duration =
+                (int) ChronoUnit.DAYS.between(
+                        LocalDate.parse(request.from()),
+                        LocalDate.parse(request.to()))
+                        + 1;
+
+        if (balance.getDaysLeft() < duration) {
+
+            throw new BadRequestException("Insufficient leave balance.");
 
         }
     }
@@ -603,6 +625,8 @@ public class LeaveApplicationFormService {
             LocalDate from,
             LocalDate to
     ) {
+
+        List<String> errors = new ArrayList<>();
 
         if (Boolean.FALSE.equals(policy.getSandwichAllowed())) {
             return false;
@@ -618,7 +642,7 @@ public class LeaveApplicationFormService {
         if (policy.getMaxSandwichDaysPerApplication() != null
                 && duration > policy.getMaxSandwichDaysPerApplication()) {
 
-            throw new BadRequestException(
+            addErrorIfNotNull(errors,
                     "Maximum sandwich leave is "
                             + policy.getMaxSandwichDaysPerApplication()
                             + " day(s).");
@@ -633,69 +657,16 @@ public class LeaveApplicationFormService {
 
             if (count >= policy.getMaxSandwichPerYear()) {
 
-                throw new BadRequestException(
+                addErrorIfNotNull(errors,
                         "Maximum sandwich leave already used for "
                                 + from.getYear());
 
             }
         }
 
+        throwIfErrors(errors);
+
         return true;
-    }
-
-    private boolean isSandwichLeave(
-            LocalDate from,
-            LocalDate to
-    ) {
-
-        LocalDate before = from.minusDays(1);
-        LocalDate after = to.plusDays(1);
-
-        return isNonWorkingDay(before)
-                && isNonWorkingDay(after);
-
-    }
-
-    private boolean isHoliday(LocalDate date) {
-
-        return holidayRepository
-                .existsByIsEnabledTrueAndFromDateLessThanEqualAndToDateGreaterThanEqual(
-                        date,
-                        date
-                );
-
-    }
-
-    private boolean isWeekend(LocalDate date) {
-
-        DayOfWeek day = date.getDayOfWeek();
-
-        return day == DayOfWeek.FRIDAY
-                || day == DayOfWeek.SATURDAY;
-
-    }
-
-    private boolean isNonWorkingDay(LocalDate date) {
-
-        return isWeekend(date) || isHoliday(date);
-
-    }
-
-    private void validateBalance(Employee employee,
-                                 EmployeeLeaveBalance balance,
-                                 LeaveApplicationFormRequestSub request) {
-        int duration =
-                (int) ChronoUnit.DAYS.between(
-                        LocalDate.parse(request.from()),
-                        LocalDate.parse(request.to()))
-                        + 1;
-
-        if (balance.getDaysLeft() < duration) {
-
-            throw new BadRequestException(
-                    "Insufficient leave balance.");
-
-        }
     }
 
     // =========================
@@ -723,6 +694,9 @@ public class LeaveApplicationFormService {
         return "7001"; // sample role ID
     }
 
+    // =========================
+    // HELPERS
+    // =========================
     private void handleAttachments(String sessionId, LeaveApplication application, List<LeaveAttachmentRequest> attachments, LeaveApplicationFormRequest request) {
         if (attachments != null) {
 
@@ -819,6 +793,58 @@ public class LeaveApplicationFormService {
 
             fileStorageService.deleteTemp(sessionId);
         }
+    }
+
+    private boolean isSandwichLeave(
+            LocalDate from,
+            LocalDate to
+    ) {
+
+        LocalDate before = from.minusDays(1);
+        LocalDate after = to.plusDays(1);
+
+        return isNonWorkingDay(before)
+                && isNonWorkingDay(after);
+
+    }
+
+    private boolean isHoliday(LocalDate date) {
+
+        return holidayRepository
+                .existsByIsEnabledTrueAndFromDateLessThanEqualAndToDateGreaterThanEqual(
+                        date,
+                        date
+                );
+
+    }
+
+    private boolean isWeekend(LocalDate date) {
+
+        DayOfWeek day = date.getDayOfWeek();
+
+        return day == DayOfWeek.FRIDAY
+                || day == DayOfWeek.SATURDAY;
+
+    }
+
+    private boolean isNonWorkingDay(LocalDate date) {
+
+        return isWeekend(date) || isHoliday(date);
+
+    }
+
+    private void addErrorIfNotNull(List<String> errors, String error) {
+        if (error != null) {
+            errors.add(error);
+        }
+    }
+
+    private void throwIfErrors(List<String> errors){
+
+        if(!errors.isEmpty()){
+            throw new ValidationException(errors);
+        }
+
     }
 
 }
